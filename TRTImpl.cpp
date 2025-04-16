@@ -5,7 +5,7 @@
 #include<filesystem>
 #include"buffer.h"
 #include <opencv2/cudaimgproc.hpp>
-#include <opencv2/cudaarithm.hpp>    // °üº¬ËãÊõ²Ù×÷Í·ÎÄ¼ş
+#include <opencv2/cudaarithm.hpp>    // åŒ…å«ç®—æœ¯æ“ä½œå¤´æ–‡ä»¶
 #include "trt_builder.hpp" 
 template <typename T>
 using SampleUniquePtr = std::unique_ptr<T>;
@@ -20,26 +20,26 @@ struct InferDeleter
 using namespace std;
 //using samplesCommon::SampleUniquePtr;
 void gpu_processing(const cv::Mat& input, float* hostBuffer, int h, int w) {
-    // ÉÏ´«Êı¾İµ½GPU
+    // ä¸Šä¼ æ•°æ®åˆ°GPU
     cv::cuda::GpuMat d_input, d_high, d_low, d_global;
     d_input.upload(input);
 
-    // ´´½¨CUDAÁ÷ÊµÏÖÒì²½²Ù×÷
+    // åˆ›å»ºCUDAæµå®ç°å¼‚æ­¥æ“ä½œ
     cv::cuda::Stream stream;
 
-    // ·Ö½â¸ß/µÍ×Ö½Ú£¨CUDAºËº¯Êı£©
+    // åˆ†è§£é«˜/ä½å­—èŠ‚ï¼ˆCUDAæ ¸å‡½æ•°ï¼‰
     cv::cuda::GpuMat d_high_byte, d_low_byte;
-    d_input.convertTo(d_high_byte, CV_8UC1, 1.0 / 255, 0, stream); // ¸ß×Ö½Ú
-    d_input.convertTo(d_low_byte, CV_8UC1, 1.0, 0, stream);     // µÍ×Ö½Ú
+    d_input.convertTo(d_high_byte, CV_8UC1, 1.0 / 255, 0, stream); // é«˜å­—èŠ‚
+    d_input.convertTo(d_low_byte, CV_8UC1, 1.0, 0, stream);     // ä½å­—èŠ‚
     cv::cuda::bitwise_and(d_low_byte, cv::Scalar(0xFF), d_low_byte, cv::noArray(), stream);
 
-    // ¹éÒ»»¯´¦Àí
+    // å½’ä¸€åŒ–å¤„ç†
     cv::cuda::GpuMat d_high_norm, d_low_norm, d_global_norm;
     d_high_byte.convertTo(d_high_norm, CV_32F, 2.0 / 255, -1.0, stream);
     d_low_byte.convertTo(d_low_norm, CV_32F, 2.0 / 255, -1.0, stream);
     d_input.convertTo(d_global_norm, CV_32F, 2.0 / 65535, -1.0, stream);
 
-    // ÏÂÔØ½á¹ûµ½CPU»º³åÇø
+    // ä¸‹è½½ç»“æœåˆ°CPUç¼“å†²åŒº
     d_high_norm.download(cv::Mat(h, w, CV_32F, hostBuffer), stream);
     d_low_norm.download(cv::Mat(h, w, CV_32F, hostBuffer + h * w), stream);
     d_global_norm.download(cv::Mat(h, w, CV_32F, hostBuffer + 2 * h * w), stream);
@@ -81,21 +81,21 @@ TRTImpl::TRTImpl(const std::string& engine_path) :
 {
 
     //if (engine_path.empty()) {
-    //    throw std::runtime_error("ÒıÇæÂ·¾¶²»ÄÜÎª¿Õ");
+    //    throw std::runtime_error("å¼•æ“è·¯å¾„ä¸èƒ½ä¸ºç©º");
     //}
-    //std::cout << "µ±Ç°¹¤×÷Ä¿Â¼: " << std::filesystem::current_path() << std::endl;
+    //std::cout << "å½“å‰å·¥ä½œç›®å½•: " << std::filesystem::current_path() << std::endl;
     cudaStreamCreate(&stream);
 
 
     std::ifstream file(engine_path, std::ios::binary);
     if (!file) {
-        throw std::runtime_error("ÎŞ·¨´ò¿ªÒıÇæÎÄ¼ş test.trt");
+        throw std::runtime_error("æ— æ³•æ‰“å¼€å¼•æ“æ–‡ä»¶ test.trt");
     }
     if (file.peek() == std::ifstream::traits_type::eof()) {
-        throw std::runtime_error("ÎÄ¼şÎª¿Õ");
+        throw std::runtime_error("æ–‡ä»¶ä¸ºç©º");
     }
     if (!file.is_open()) {
-        throw std::runtime_error("ÎÄ¼ş´ò¿ªÊ§°Ü");
+        throw std::runtime_error("æ–‡ä»¶æ‰“å¼€å¤±è´¥");
     }
     this->runtime = nvinfer1::createInferRuntime(logger);
 
@@ -107,7 +107,7 @@ TRTImpl::TRTImpl(const std::string& engine_path) :
     file.seekg(0, std::ios::end);
     std::streamoff fileSize = file.tellg();
     if (fileSize <= 0) {
-        throw std::runtime_error("ÒıÇæÎÄ¼şÎª¿Õ»ò¶ÁÈ¡Ê§°Ü");
+        throw std::runtime_error("å¼•æ“æ–‡ä»¶ä¸ºç©ºæˆ–è¯»å–å¤±è´¥");
     }
     //size_t size =  file.tellg();
     file.seekg(0, std::ios::beg);
@@ -116,7 +116,7 @@ TRTImpl::TRTImpl(const std::string& engine_path) :
     std::vector<char> engine_data(size);
     file.read(engine_data.data(), size);
     if (file.gcount() != size) {
-        throw std::runtime_error("ÎÄ¼ş¶ÁÈ¡²»ÍêÕû");
+        throw std::runtime_error("æ–‡ä»¶è¯»å–ä¸å®Œæ•´");
     }
     file.close();
 
@@ -194,29 +194,29 @@ cv::Mat TRTImpl::doInference(const cv::Mat& inputMat) {
 
 
 
-    // ´´½¨±êÇ©¾ØÕóºÍ²ÊÉ«Í¼Ïñ
+    // åˆ›å»ºæ ‡ç­¾çŸ©é˜µå’Œå½©è‰²å›¾åƒ
  /*   cv::Mat labelMat(height, width, CV_8UC1);*/
     cv::Mat resultImg(height, width, CV_8UC3, cv::Scalar(0, 0, 0));
     cv::Mat labelMat(height, width, CV_32FC(5), cv::Scalar::all(0.0f));
     cv::Mat label(height, width, CV_8UC1);
-    // ²¢ĞĞ»¯ÏñËØ´¦Àí
+    // å¹¶è¡ŒåŒ–åƒç´ å¤„ç†
 #pragma omp parallel for collapse(2)
     for (int h = 0; h < height; ++h) {
         for (int w = 0; w < width; ++w) {
-            // CHW²¼¾ÖÏÂ¼ÆËã»ù´¡Æ«ÒÆÁ¿
-            const size_t pixelOffset = h * width + w;  // µ±Ç°ÏñËØÔÚµ¥¸öÍ¨µÀÄÚµÄÎ»ÖÃ
+            // CHWå¸ƒå±€ä¸‹è®¡ç®—åŸºç¡€åç§»é‡
+            const size_t pixelOffset = h * width + w;  // å½“å‰åƒç´ åœ¨å•ä¸ªé€šé“å†…çš„ä½ç½®
             float* label_ptr = labelMat.ptr<float>(h, w);
-            // ±éÀúËùÓĞÍ¨µÀÑ°ÕÒ×î´óÖµ
+            // éå†æ‰€æœ‰é€šé“å¯»æ‰¾æœ€å¤§å€¼
             int maxIdx = 0;
-            float maxVal = res[pixelOffset];  // ³õÊ¼»¯ÎªÍ¨µÀ0µÄÊı¾İ
+            float maxVal = res[pixelOffset];  // åˆå§‹åŒ–ä¸ºé€šé“0çš„æ•°æ®
             for (int c = 1; c < out_channels; ++c) {
-                // Ã¿¸öÍ¨µÀµÄÊı¾İ¿é´óĞ¡Îªheight*width
+                // æ¯ä¸ªé€šé“çš„æ•°æ®å—å¤§å°ä¸ºheight*width
                 const size_t channelOffset = c * height * width;
                 const float current = res[channelOffset + pixelOffset];
                 const size_t offset = c * height * width + h * width + w;
                 const float current1 = res[offset];
 
-                // Ö±½ÓĞ´Èë¸¡µãÍ¨µÀÊı¾İ
+                // ç›´æ¥å†™å…¥æµ®ç‚¹é€šé“æ•°æ®
                 label_ptr[c] = current1;
                 if (current > maxVal) {
                     maxVal = current;
@@ -225,39 +225,7 @@ cv::Mat TRTImpl::doInference(const cv::Mat& inputMat) {
             }
             const size_t baseLabelOffset = (h * width + w) * 5;
             labelMat.data[baseLabelOffset] = res[pixelOffset];
-            // Ö±½Ó²Ù×÷ÄÚ´æ±£Ö¤Ïß³Ì°²È«£¨BGR¸ñÊ½£©
-            //label.at<uchar>(h, w) = maxIdx;
-            //const int bufferOffset = (h * width + w) * 3;
-            //if (maxIdx == 0) {         // ºÚÉ«
-            //    resultImg.data[bufferOffset] = 0;     // B
-            //    resultImg.data[bufferOffset + 1] = 0; // G
-            //    resultImg.data[bufferOffset + 2] = 0; // R
-            //}
-            //else if (maxIdx == 1) {    // ºìÉ«
-            //    resultImg.data[bufferOffset] = 0;
-            //    resultImg.data[bufferOffset + 1] = 0;
-            //    resultImg.data[bufferOffset + 2] = 255;
-            //}
-            //else if (maxIdx == 2) {    // À¶É«
-            //    resultImg.data[bufferOffset] = 255;
-            //    resultImg.data[bufferOffset + 1] = 0;
-            //    resultImg.data[bufferOffset + 2] = 0;
-            //}
-            //else if (maxIdx == 3) {    // ÂÌÉ«
-            //    resultImg.data[bufferOffset] = 0;
-            //    resultImg.data[bufferOffset + 1] = 255;
-            //    resultImg.data[bufferOffset + 2] = 0;
-            //}
-            //else if (maxIdx == 4) {    // »ÆÉ«
-            //    resultImg.data[bufferOffset] = 0;
-            //    resultImg.data[bufferOffset + 1] = 255;
-            //    resultImg.data[bufferOffset + 2] = 255;
-            //}
-            //else {                     // Òì³£ÖµÏÔÊ¾°×É«
-            //    resultImg.data[bufferOffset] = 255;
-            //    resultImg.data[bufferOffset + 1] = 255;
-            //    resultImg.data[bufferOffset + 2] = 255;
-            //}
+           
         }
     }
 
